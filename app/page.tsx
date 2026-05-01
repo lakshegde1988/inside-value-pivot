@@ -12,11 +12,11 @@ import type { ScanResult } from "@/components/ChartPanel";
 type IndexKey = "all" | "largecaps" | "midcaps" | "smallcaps" | "microcaps";
 
 const INDICES: Record<IndexKey, { label: string; sub: string; file: string }> = {
-  all:       { label: "All",   sub: "Nifty 500",    file: "/stocks.json"    },
-  largecaps: { label: "Large", sub: "Nifty 100",    file: "/largecaps.json" },
-  midcaps:   { label: "Mid",   sub: "Midcap 150",   file: "/midcaps.json"   },
-  smallcaps: { label: "Small", sub: "Smallcap 250", file: "/smallcaps.json" },
-  microcaps: { label: "Micro", sub: "Microcap 250", file: "/microcaps.json" },
+  all:       { label: "F&O",   sub: "Nifty F&O",    file: "/stocks.json"    },
+  largecaps: { label: "Largecaps", sub: "Nifty 100",    file: "/largecaps.json" },
+  midcaps:   { label: "Midcaps",   sub: "Midcap 150",   file: "/midcaps.json"   },
+  smallcaps: { label: "Smallcaps", sub: "Smallcap 250", file: "/smallcaps.json" },
+  microcaps: { label: "Microcaps", sub: "Microcap 250", file: "/microcaps.json" },
 };
 const INDEX_KEYS: IndexKey[] = ["all", "largecaps", "midcaps", "smallcaps", "microcaps"];
 
@@ -165,6 +165,13 @@ export default function LandingPage() {
 
   const showResults = () => router.push("/results");
 
+  // Auto-navigate to results when scan completes
+  useEffect(() => {
+    if (finished && found > 0 && !scanning) {
+      showResults();
+    }
+  }, [finished, found, scanning]);
+
   const pct = stocks.length ? (done / stocks.length) * 100 : 0;
 
   // ── Render ─────────────────────────────────────────────────────────────────
@@ -177,16 +184,23 @@ export default function LandingPage() {
     }}>
 
       {/* Card */}
-      <div style={{ width: "100%", maxWidth: 440, display: "flex", flexDirection: "column", gap: 36 }}>
+      <div style={{
+        width: "100%", maxWidth: 535,
+        display: "flex", flexDirection: "column", gap: 36,
+        background: "var(--surface)",
+        borderRadius: "16px",
+        border: "1px solid var(--border)",
+        padding: "32px",
+      }}>
 
         {/* Title */}
         <div>
           <div style={{ color: "var(--t3)", fontSize: 10, letterSpacing: "0.2em", textTransform: "uppercase", marginBottom: 6 }}>
-            NSE · Floor Pivot · Inside Month
+            INSIDE VALUE PIVOTS
           </div>
           <div style={{ color: "var(--t1)", fontSize: 26, fontWeight: 700, lineHeight: 1.1, letterSpacing: "-0.01em" }}>
-            Breakout<br />
-            <span style={{ color: "var(--green)" }}>Scanner</span>
+            Pivot<br />
+            <span style={{ color: "var(--green)" }}>Vista</span>
           </div>
         </div>
 
@@ -308,20 +322,6 @@ export default function LandingPage() {
                 </span>
               </div>
             </div>
-          )}
-
-          {/* Show Results button — appears after scan finishes */}
-          {finished && found > 0 && !scanning && (
-            <button onClick={showResults}
-              style={{
-                padding: "11px 0", borderRadius: 5, border: "1px solid var(--green)",
-                background: "transparent", color: "var(--green)",
-                fontSize: 13, fontWeight: 600, cursor: "pointer",
-                letterSpacing: "0.03em",
-                animation: "fadeSlideUp 0.3s ease both",
-              }}>
-              Show Results →
-            </button>
           )}
 
           {finished && found === 0 && !scanning && (

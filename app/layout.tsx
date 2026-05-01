@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Pivot Scanner — Inside Month Breakout Finder",
+  title: "Pivot Vista — Inside Month Breakout Scanner",
   description:
     "NSE stock scanner that finds Inside Month Floor Pivot compression setups for explosive breakouts.",
 };

@@ -104,7 +104,7 @@ export default function ResultsPage() {
           onMouseLeave={e => (e.currentTarget.style.color = "var(--t3)")}
         >
           <ArrowLeft size={14} />
-          <span>Scanner</span>
+          <span>Pivot Vista</span>
         </button>
 
         {meta && (
