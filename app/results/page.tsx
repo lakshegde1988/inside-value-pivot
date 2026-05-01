@@ -1,14 +1,16 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowLeft } from "lucide-react";
+import { ChevronLeft, ChevronRight, ArrowLeft } from "lucide-react";
 import ChartPanel, { type ScanResult } from "@/components/ChartPanel";
 
 type SortKey = "name" | "ppTrend";
 type SortDir  = "asc" | "desc";
 
 interface Meta { indexLabel: string; month: string; }
+
+const PAGE_SIZE = 20;
 
 export default function ResultsPage() {
   const router = useRouter();
@@ -18,6 +20,7 @@ export default function ResultsPage() {
   const [ready,    setReady]    = useState(false);
   const [sortKey,  setSortKey]  = useState<SortKey>("name");
   const [sortDir,  setSortDir]  = useState<SortDir>("asc");
+  const [currentPage, setCurrentPage] = useState(1);
 
   useEffect(() => {
     try {
@@ -37,11 +40,12 @@ export default function ResultsPage() {
   const sort = (k: SortKey) => {
     if (k === sortKey) setSortDir(d => d === "asc" ? "desc" : "asc");
     else { setSortKey(k); setSortDir("asc"); }
+    setCurrentPage(1);
   };
 
   const sorted = [...results].sort((a, b) => {
     if (sortKey === "name") {
-      const r = (a.name || "").localeCompare(b.name || "");
+      const r = a.name.localeCompare(b.name);
       return sortDir === "asc" ? r : -r;
     }
     if (sortKey === "ppTrend") {
@@ -50,6 +54,18 @@ export default function ResultsPage() {
     }
     return 0;
   });
+
+  const totalPages = Math.ceil(sorted.length / PAGE_SIZE);
+  const paginatedResults = sorted.slice(
+    (currentPage - 1) * PAGE_SIZE,
+    currentPage * PAGE_SIZE
+  );
+
+  const goToPage = (page: number) => {
+    if (page >= 1 && page <= totalPages) {
+      setCurrentPage(page);
+    }
+  };
 
   if (!ready) {
     return (
@@ -63,80 +79,104 @@ export default function ResultsPage() {
   }
 
   return (
-    <>
+    <div style={{
+      background: "var(--bg)",
+      height: "100dvh",
+      display: "flex",
+      flexDirection: "column",
+      maxWidth: "72rem",
+      margin: "0 auto",
+    }}>
+      {/* ── Top bar ─────────────────────────────────────────────────── */}
       <div style={{
-        background: "var(--bg)",
-        /* Use dvh so mobile browser chrome doesn't cause overflow */
-        height: "100dvh",
-        display: "flex",
-        flexDirection: "column",
-        /* center within page for wide viewports */
-        maxWidth: "80rem",
-        margin: "0 auto",
+        display: "flex", alignItems: "center", gap: 10,
+        padding: "0 16px", height: 48, flexShrink: 0,
+        borderBottom: "1px solid var(--border)",
       }}>
+        <button
+          onClick={() => router.push("/")}
+          style={{
+            background: "none", border: "none", color: "var(--t3)",
+            cursor: "pointer", display: "flex", alignItems: "center",
+            gap: 6, fontSize: 12, padding: "6px 0",
+          }}
+          onMouseEnter={e => (e.currentTarget.style.color = "var(--t2)")}
+          onMouseLeave={e => (e.currentTarget.style.color = "var(--t3)")}
+        >
+          <ArrowLeft size={14} />
+          <span>Scanner</span>
+        </button>
 
-        {/* ── Top bar ─────────────────────────────────────────────────── */}
-        <div style={{
-          display: "flex", alignItems: "center", gap: 10,
-          padding: "0 14px", height: 36, flexShrink: 0,
-          borderBottom: "1px solid var(--border)",
-        }}>
-          <button
-            onClick={() => router.push("/")}
-            style={{
-              background: "none", border: "none", color: "var(--t3)",
-              cursor: "pointer", display: "flex", alignItems: "center",
-              gap: 4, fontSize: 11, padding: "4px 0",
-            }}
-            onMouseEnter={e => (e.currentTarget.style.color = "var(--t2)")}
-            onMouseLeave={e => (e.currentTarget.style.color = "var(--t3)")}
-          >
-            <ArrowLeft size={13} />
-            <span className="rp-back-label">Scanner</span>
-          </button>
-
-          {meta && (
-            <span style={{ color: "var(--t3)", fontSize: 11 }}>
-              <span className="rp-meta-index">{meta.indexLabel}</span>
-            </span>
-          )}
-
-          <div style={{ flex: 1 }} />
-
-          <span style={{ color: "var(--t3)", fontSize: 11, flexShrink: 0 }}>
-            <span style={{ color: "var(--green)", fontWeight: 600 }}>{sorted.length}</span>
-            <span style={{ marginLeft: 3 }}>setups</span>
+        {meta && (
+          <span style={{ color: "var(--t3)", fontSize: 12 }}>
+            {meta.indexLabel} · {meta.month}
           </span>
-        </div>
+        )}
 
-        {/* ── Table ────────────────────────────────────────────────────── */}
-        <div style={{ flex: 1, minHeight: 0, overflow: "hidden", padding: "0 14px 14px" }}>
-          <div style={{
-            height: "100%",
-            border: "1px solid var(--border)",
-            borderRadius: 6,
-            overflow: "hidden",
-            background: "var(--surface)",
-          }}>
-            <ChartPanel
-              results={sorted}
-              sortKey={sortKey}
-              sortDir={sortDir}
-              onSort={sort}
-            />
-          </div>
-        </div>
+        <div style={{ flex: 1 }} />
+
+        <span style={{ color: "var(--t3)", fontSize: 12 }}>
+          <span style={{ color: "var(--green)", fontWeight: 600 }}>{sorted.length}</span>
+          <span style={{ marginLeft: 4 }}>setups</span>
+        </span>
       </div>
 
-      <style>{`
-        .rp-back-label  { display: inline !important; }
-        .rp-meta-index  { display: inline !important; }
+      {/* ── Results table ─────────────────────────────────────────────── */}
+      <div style={{ flex: 1, minHeight: 0, overflow: "hidden" }}>
+        <ChartPanel
+          results={paginatedResults}
+          sortKey={sortKey}
+          sortDir={sortDir}
+          onSort={sort}
+        />
+      </div>
 
-        @media (max-width: 640px) and (orientation: portrait) {
-          .rp-back-label { display: none  !important; }
-          .rp-meta-index { display: none  !important; }
-        }
-      `}</style>
-    </>
+      {/* ── Footer pagination ─────────────────────────────────────────── */}
+      <div style={{
+        display: "flex", alignItems: "center", justifyContent: "space-between",
+        padding: "0 16px", height: 48, flexShrink: 0,
+        borderTop: "1px solid var(--border)",
+      }}>
+        <span style={{ color: "var(--t3)", fontSize: 12 }}>
+          Showing {(currentPage - 1) * PAGE_SIZE + 1}-{Math.min(currentPage * PAGE_SIZE, sorted.length)} of {sorted.length}
+        </span>
+
+        <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+          <button
+            onClick={() => goToPage(currentPage - 1)}
+            disabled={currentPage === 1}
+            style={{
+              background: "none", border: "1px solid var(--border)",
+              padding: "6px 12px", borderRadius: 4,
+              cursor: currentPage === 1 ? "not-allowed" : "pointer",
+              color: currentPage === 1 ? "var(--t3)" : "var(--t2)",
+              fontSize: 12, display: "flex", alignItems: "center", gap: 4,
+            }}
+          >
+            <ChevronLeft size={14} />
+            Prev
+          </button>
+
+          <span style={{ color: "var(--t2)", fontSize: 12, fontWeight: 600 }}>
+            {currentPage} / {totalPages}
+          </span>
+
+          <button
+            onClick={() => goToPage(currentPage + 1)}
+            disabled={currentPage === totalPages}
+            style={{
+              background: "none", border: "1px solid var(--border)",
+              padding: "6px 12px", borderRadius: 4,
+              cursor: currentPage === totalPages ? "not-allowed" : "pointer",
+              color: currentPage === totalPages ? "var(--t3)" : "var(--t2)",
+              fontSize: 12, display: "flex", alignItems: "center", gap: 4,
+            }}
+          >
+            Next
+            <ChevronRight size={14} />
+          </button>
+        </div>
+      </div>
+    </div>
   );
 }
