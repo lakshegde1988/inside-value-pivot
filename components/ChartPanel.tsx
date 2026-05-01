@@ -49,7 +49,6 @@ export default function ChartPanel({ results, sortKey, sortDir, onSort }: ChartP
         <table style={{ width: "100%", borderCollapse: "collapse" }}>
           <thead style={{ position: "sticky", top: 0, background: "var(--bg)", zIndex: 1 }}>
             <tr>
-              <Th>Symbol</Th>
               <ThButton
                 active={sortKey === "name"}
                 dir={sortKey === "name" ? sortDir : undefined}
@@ -80,7 +79,6 @@ export default function ChartPanel({ results, sortKey, sortDir, onSort }: ChartP
                 r.ppTrend === "Lower" ? "var(--red)" : "var(--t3)";
               return (
                 <tr key={r.symbol} style={{ borderBottom: "1px solid var(--border)" }}>
-                  <Td><span style={{ color: "var(--t1)", fontWeight: 700 }}>{r.symbol}</span></Td>
                   <Td><span style={{ color: "var(--t3)" }}>{r.name}</span></Td>
                   <Td align="right">{fmt(r.cmp)}</Td>
                   <Td align="right" style={{ color: "var(--green)" }}>{fmt(r.buyPoint)}</Td>
