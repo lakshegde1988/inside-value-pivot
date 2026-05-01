@@ -39,8 +39,13 @@ function fmt(n: number | null | undefined) {
 // ── Main ───────────────────────────────────────────────────────────────────────
 export default function ChartPanel({ results, sortKey, sortDir, onSort }: ChartPanelProps) {
   return (
-    <div style={{ height: "100%", display: "flex", flexDirection: "column", minHeight: 0 }}>
-      <div style={{ flex: 1, minHeight: 0, overflow: "auto" }}>
+    <div style={{ height: "100%", display: "flex", flexDirection: "column", minHeight: 0, padding: "16px" }}>
+      <div style={{
+        flex: 1, minHeight: 0, overflow: "auto",
+        background: "var(--bg)",
+        borderRadius: "12px",
+        border: "1px solid var(--border)",
+      }}>
         <table style={{ width: "100%", borderCollapse: "collapse" }}>
           <thead style={{ position: "sticky", top: 0, background: "var(--bg)", zIndex: 1 }}>
             <tr>
@@ -98,8 +103,8 @@ function Th({ children, align }: { children: React.ReactNode; align?: "left" | "
   return (
     <th style={{
       textAlign: align ?? "left",
-      padding: "10px 10px",
-      fontSize: 10,
+      padding: "14px 16px",
+      fontSize: 11,
       letterSpacing: "0.12em",
       textTransform: "uppercase",
       color: "var(--t3)",
@@ -138,8 +143,8 @@ function ThButton({
         style={{
           width: "100%",
           textAlign: "left",
-          padding: "10px 10px",
-          fontSize: 10,
+          padding: "14px 16px",
+          fontSize: 11,
           letterSpacing: "0.12em",
           textTransform: "uppercase",
           color: active ? "var(--t2)" : "var(--t3)",
@@ -166,8 +171,8 @@ function Td({ children, align, style }: {
   return (
     <td style={{
       textAlign: align ?? "left",
-      padding: "10px 10px",
-      fontSize: 12,
+      padding: "14px 16px",
+      fontSize: 13,
       color: "var(--t2)",
       verticalAlign: "middle",
       whiteSpace: "nowrap",
