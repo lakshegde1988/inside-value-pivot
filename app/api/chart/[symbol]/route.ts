@@ -114,6 +114,10 @@ export async function GET(
     interval,
     range,
     includePrePost: "false",
+    // Disable adjusted close so Yahoo returns actual exchange-traded OHLC.
+    // Without this, Yahoo silently back-adjusts H/L/C for bonus issues and
+    // splits, causing pivot levels to diverge from TradingView / NSE bhav copy.
+    includeAdjustedClose: "false",
     events: "div,splits",
   });
 

@@ -75,27 +75,44 @@ export default function LandingPage() {
       await Promise.allSettled(batch.map(async s => {
         if (abort.current) return;
         try {
-          const res  = await fetch(`/api/chart/${encodeURIComponent(s.Symbol + ".NS")}?interval=1mo&range=6mo`);
+          const res  = await fetch(`/api/chart/${encodeURIComponent(s.Symbol + ".NS")}?interval=1mo&range=12mo`);
           const data = await res.json();
           const bars: { date: string; open: number; high: number; low: number; close: number }[] = data.bars || [];
           if (bars.length < 3) return;
 
-          const now    = new Date();
+          const now = new Date();
           const thisYM = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
-          const complete = bars.filter(b => b.date.substring(0, 7) < thisYM);
-          const currBar  = bars.find(b  => b.date.substring(0, 7) === thisYM);
-          if (complete.length < 2) return;
 
-          const m    = complete.length;
-          const last = complete[m - 1];
-          const prev = complete[m - 2];
+          // Separate the current partial month bar from fully-closed months.
+          // A bar whose YYYY-MM equals thisYM is the current (incomplete) bar.
+          // Everything strictly less than thisYM is a closed month.
+          const currBar     = bars.find(b => b.date.substring(0, 7) === thisYM);
+          const closedBars  = bars
+            .filter(b => b.date.substring(0, 7) < thisYM)
+            // Guard against degenerate bars (first trading day of month,
+            // Yahoo sometimes returns a 1-candle bar for the current month
+            // stamped one day early — these have H == L, so drop them).
+            .filter(b => b.high > b.low);
+
+          if (closedBars.length < 2) return;
+
+          // Use the last two fully-closed months by position (most recent first).
+          // This is the original logic that worked — date filtering above already
+          // removed any degenerate partial bar that could corrupt these positions.
+          const n       = closedBars.length;
+          const lastBar  = closedBars[n - 1]; // last complete month  (e.g. April)
+          const prev2Bar = closedBars[n - 2]; // month before that    (e.g. March)
 
           let hlcCurr: typeof bars[0], hlcPrev: typeof bars[0], cmp: number;
           if (mode === "current_month") {
-            hlcCurr = last; hlcPrev = prev; cmp = currBar?.close ?? last.close;
+            hlcCurr = lastBar;   // April HLC  → May pivots
+            hlcPrev = prev2Bar;  // March HLC  → April pivots
+            cmp = currBar?.close ?? lastBar.close;
           } else {
             if (!currBar) return;
-            hlcCurr = currBar; hlcPrev = last; cmp = currBar.close;
+            hlcCurr = currBar;  // current month HLC → next month pivots
+            hlcPrev = lastBar;  // last complete HLC → current month pivots
+            cmp = currBar.close;
           }
 
           const currP = calculateFloorPivots(hlcCurr.high, hlcCurr.low, hlcCurr.close);
@@ -113,6 +130,9 @@ export default function LandingPage() {
             ppTrend:  currP.PP > prevP.PP ? "Higher" : currP.PP < prevP.PP ? "Lower" : "Equal",
             currentPivotSourceMonth:  hlcCurr.date.substring(0, 7),
             previousPivotSourceMonth: hlcPrev.date.substring(0, 7),
+            // Raw input data — visible in pivot table for cross-checking vs TradingView / NSE
+            currentHLC:  { H: hlcCurr.high, L: hlcCurr.low,  C: hlcCurr.close },
+            previousHLC: { H: hlcPrev.high, L: hlcPrev.low,  C: hlcPrev.close },
           };
 
           resultsRef.current.push(result);
