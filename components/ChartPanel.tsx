@@ -65,7 +65,7 @@ export default function ChartPanel({ results, sortKey, sortDir, onSort }: ChartP
                 dir={sortKey === "ppTrend" ? sortDir : undefined}
                 onClick={() => onSort("ppTrend")}
               >
-                PP
+                Trend
               </ThButton>
             </tr>
           </thead>
